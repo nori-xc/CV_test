@@ -60,11 +60,11 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu13
 ```
 conda list pytorch    # 查看当前conda环境中，名称包含pytorch的已安装包
 ```
-![phtoto](photo/conda list pytorch.png)
+![phtoto](photo/condalistpytorch.png)
 
 ### 2.5 PyTorch GPU加速环境验证
 torch.cuda.is_available() 、 torch.backends.cudnn.is_available() 结果进行验证，信息如下：
-![phtoto](photo/PyTorch GPU加速环境验证.png)
+![phtoto](photo/PyTorchGPU加速环境验证.png)
 
 验证通过！
 
