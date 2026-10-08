@@ -8,7 +8,7 @@
 ### 2.1 Anaconda的安装及配置
 
 #### 1.在Anaconda官网下载Anaconda
-![photo](phtoto/Anaconda%E7%9A%84%E5%AE%89%E8%A3%85.png)
+![Anaconda安装截图](photo/Anaconda的安装.png)
 
 #### 2.在Anaconda Prompt中完成Anaconda的配置
 
