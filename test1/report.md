@@ -42,29 +42,29 @@ pip list    # 列出当前虚拟环境已经安装的所有包及对应版本
 ```
 nvidia-smi
 ```
-![phtoto](photo/显卡信息显示.png)
+![photo](photo/显卡信息显示.png)
 
 #### 2.在NVIDIA官网下载对应版本的CUDA Toolkit及cuDNN并安装。
 
 ### 2.4 PyTorch安装
 
 #### 1. 结合CUDA版本至PyTorch官网选择对应版本进行下载，页面如下：
-![phtoto](photo/pytorch下载.png)
+![photo](photo/pytorch下载.png)
 
 ```
 pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu132
 ```
-![phtoto](photo/torch的下载.png)
+![photo](photo/torch的下载.png)
 #### 2.验证安装成功
 
 ```
 conda list pytorch    # 查看当前conda环境中，名称包含pytorch的已安装包
 ```
-![phtoto](photo/condalistpytorch.png)
+![photo](photo/conda%20list%20pytorch.png)
 
 ### 2.5 PyTorch GPU加速环境验证
 torch.cuda.is_available() 、 torch.backends.cudnn.is_available() 结果进行验证，信息如下：
-![phtoto](photo/PyTorchGPU加速环境验证.png)
+![phtoto](photo/PyTorch%20GPU加速环境验证.png)
 
 验证通过！
 
