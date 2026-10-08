@@ -16,7 +16,7 @@
 conda --version    # 查看 conda 版本
 conda config --show    # 查看 conda 全部配置信息
 ```
-![photo](phtoto/Anaconda的安装及配置.png)
+![photo](photo/Anaconda的安装及配置.png)
 
 ### 2.2 conda的基本操作与OpenCV的安装
 
@@ -33,7 +33,7 @@ conda activate cv    # 激活名称为cv的conda虚拟环境
 pip install opencv-python    # 在当前cv环境中安装opencv‑python库
 pip list    # 列出当前虚拟环境已经安装的所有包及对应版本
 ```
-![photo](phtoto/conda的基本操作与OpenCV的安装.png)
+![photo](photo/conda的基本操作与OpenCV的安装.png)
 
 ### 2.3 GPU加速环境配置
 
@@ -42,29 +42,29 @@ pip list    # 列出当前虚拟环境已经安装的所有包及对应版本
 ```
 nvidia-smi
 ```
-![phtoto](phtoto/显卡信息显示.png)
+![phtoto](photo/显卡信息显示.png)
 
 #### 2.在NVIDIA官网下载对应版本的CUDA Toolkit及cuDNN并安装。
 
 ### 2.4 PyTorch安装
 
 #### 1. 结合CUDA版本至PyTorch官网选择对应版本进行下载，页面如下：
-![phtoto](phtoto/pytorch下载.png)
+![phtoto](photo/pytorch下载.png)
 
 ```
 pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu132
 ```
-![phtoto](phtoto/torch的下载.png)
+![phtoto](photo/torch的下载.png)
 #### 2.验证安装成功
 
 ```
 conda list pytorch    # 查看当前conda环境中，名称包含pytorch的已安装包
 ```
-![phtoto](phtoto/conda list pytorch.png)
+![phtoto](photo/conda list pytorch.png)
 
 ### 2.5 PyTorch GPU加速环境验证
 torch.cuda.is_available() 、 torch.backends.cudnn.is_available() 结果进行验证，信息如下：
-![phtoto](phtoto/PyTorch GPU加速环境验证.png)
+![phtoto](photo/PyTorch GPU加速环境验证.png)
 
 验证通过！
 
