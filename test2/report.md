@@ -47,7 +47,7 @@ plt.show()
 ```
 输出：Pixel (100,100) BGR: 253 236 197
 ```
-![Anaconda安装截图](photo/Anaconda的安装.png)
+![result](result/rgb_image.jpg)
 ### 3.2 色彩空间转换
 
 #### 1. 将 OpenCV 默认的 RGB 格式转换为 BGR 格式，还原图像真实色彩并保存结果。
