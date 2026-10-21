@@ -18,12 +18,13 @@
 ## 三、实验内容与步骤
 
 ### 3.1 基础环境搭建与图像读取
+
 #### 1.导⼊图像滤波相关的依赖包
 
-OpenCV库：计算机视觉与图像处理
-scikit-image库：图像增强与分析，random_noise ⽤于给图像添加噪声
-NumPy库：科学计算的基础库
-Matplotlib库：绘图与数据可视化
+OpenCV 库：计算机视觉与图像处理
+scikit-image 库：图像增强与分析，`random_noise` 用于给图像添加噪声
+NumPy 库：科学计算的基础库
+Matplotlib 库：绘图与数据可视化
 
 ```
 import cv2
@@ -31,8 +32,9 @@ from skimage.util import random_noise
 import numpy as np
 from matplotlib import pyplot as plt
 ```
+
 #### 2.读取原始图像
-使用 OpenCV 读取本地 cat.jpg 图像，提取并打印坐标 (100, 100) 处的像素通道值。直接用 Matplotlib 显示 BGR 格式图像，观察通道顺序不匹配导致的偏色现象。
+使用 OpenCV 读取本地 cat.jpg 图像（OpenCV 默认以 BGR 通道顺序存储图像），提取并打印坐标 (100, 100) 处的 BGR 像素通道值。直接用 Matplotlib 显示 BGR 格式图像，观察通道顺序不匹配导致的偏色现象。
 ```
 img = cv2.imread('cat.jpg')
 
@@ -50,9 +52,11 @@ plt.show()
 输出：Pixel (100,100) BGR: 253 236 197
 ```
 ![result](result/original_bgr.jpg)
+
 ### 3.2 色彩空间转换
 
-#### 1. 将 OpenCV 默认的 RGB 格式转换为 BGR 格式，还原图像真实色彩并保存结果。
+#### 1. BGR 格式转 RGB 格式
+将 OpenCV 默认的 BGR 格式转换为 RGB 格式，匹配 Matplotlib 的显示通道顺序，还原图像真实色彩并保存结果。
 ```
 # BGR → RGB
 rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -62,7 +66,8 @@ plt.savefig('result/rgb_image.jpg', dpi=300)
 plt.show()
 ```
 ![result](result/rgb_image.jpg)
-#### 2. 将彩色图像转换为单通道灰度图，去除色彩信息，仅保留亮度维度，为后续处理提供基础。
+#### 2. 彩色图像转灰度图
+将 BGR 格式的彩色图像转换为单通道灰度图，去除色彩信息，仅保留亮度维度，简化后续算法的计算量。
 ```
 # BGR → Gray
 gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -72,6 +77,7 @@ plt.savefig('result/gray_image.jpg', dpi=300)
 plt.show()
 ```
 ![result](result/gray_image.jpg)
+
 ### 3.3 图像噪声模拟
 
 在 RGB 原图基础上生成两类典型噪声：
@@ -105,12 +111,13 @@ plt.savefig('result/noise_comparison.jpg', dpi=300)
 plt.show()
 ```
 ![result](result/noise_comparison.jpg)
+
 ### 3.4 经典滤波算法去噪实验
 
 分别对椒盐噪声、高斯噪声图像应用三种滤波算法：
 1. 均值滤波：采用 5×5 邻域窗口，以邻域像素平均值作为输出。
-2. 中值滤波：采用 5×5 窗口，以邻域像素排序后的中值作为输出，需先将浮点型噪声图转换为 uint8 格式。
-3. 高斯滤波：采用 5×5 高斯核，按距离加权平均，标准差自动计算。
+2. 中值滤波：采用 5×5 窗口，以邻域像素排序后的中值作为输出，需先将 0-1 范围的浮点型噪声图转换为 0-255 范围的 uint8 格式。
+3. 高斯滤波：采用 5×5 高斯核，按像素距离加权平均，标准差由函数自动计算。
 将 6 组处理结果排列为 2 行 3 列的对比图，统一保存。
 ```
 # 均值滤波
@@ -159,9 +166,11 @@ plt.savefig('result/filter_results_2x3.jpg', dpi=300)
 plt.show()
 ```
 ![result](result/filter_results_2x3.jpg)
+
 ### 3.5 手动实现中值滤波
 
-自主编写函数实现彩色图像中值滤波：对图像边缘采用复制填充避免信息丢失；对 R、G、B 三个通道独立遍历，逐个像素提取邻域窗口并计算中值；最终将手动滤波结果与带噪原图对比，验证算法有效性。
+自主编写函数实现彩色图像中值滤波：对图像边缘采用复制填充避免边界信息丢失；对 R、G、B 三个通道独立遍历，逐个像素提取邻域窗口并计算中值。
+最终将手动滤波结果与带噪原图对比，验证算法有效性。
 ```
 def manual_median_filter_color(image, kernel_size=5):
     """
