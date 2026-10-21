@@ -19,10 +19,12 @@
 
 ### 3.1 基础环境搭建与图像读取
 #### 1.导⼊图像滤波相关的依赖包
+
 OpenCV库：计算机视觉与图像处理
 scikit-image库：图像增强与分析，random_noise ⽤于给图像添加噪声
 NumPy库：科学计算的基础库
 Matplotlib库：绘图与数据可视化
+
 ```
 import cv2
 from skimage.util import random_noise
@@ -30,7 +32,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 ```
 #### 2.读取原始图像
-使用 OpenCV 读取本地 cat.jpg 图像，提取并打印坐标 (100, 100) 处的像素通道值，通过下⾯的输出结果可以看到，【100,100】像素点的RGB为【253 236 197】，表现为偏蓝⾊。直接用 Matplotlib 显示 BGR 格式图像，观察通道顺序不匹配导致的偏色现象。
+使用 OpenCV 读取本地 cat.jpg 图像，提取并打印坐标 (100, 100) 处的像素通道值。直接用 Matplotlib 显示 BGR 格式图像，观察通道顺序不匹配导致的偏色现象。
 ```
 img = cv2.imread('cat.jpg')
 
@@ -47,13 +49,29 @@ plt.show()
 ```
 输出：Pixel (100,100) BGR: 253 236 197
 ```
-![result](result/rgb_image.jpg)
+![result](result/original_bgr.jpg)
 ### 3.2 色彩空间转换
 
 #### 1. 将 OpenCV 默认的 RGB 格式转换为 BGR 格式，还原图像真实色彩并保存结果。
-
+```
+# BGR → RGB
+rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+plt.imshow(rgb_img)
+plt.title('RGB Image')
+plt.savefig('result/rgb_image.jpg', dpi=300)
+plt.show()
+```
+![result](result/rgb_image.jpg)
 #### 2. 将彩色图像转换为单通道灰度图，去除色彩信息，仅保留亮度维度，为后续处理提供基础。
-
+```
+# BGR → Gray
+gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+plt.imshow(gray_img, cmap='gray')
+plt.title('Gray Image')
+plt.savefig('result/gray_image.jpg', dpi=300)
+plt.show()
+```
+![result](result/gray_image.jpg)
 ### 3.3 图像噪声模拟
 
 在 RGB 原图基础上生成两类典型噪声：
@@ -61,6 +79,32 @@ plt.show()
 2. 高斯噪声：设置均值 0.2、方差 0.03，模拟服从正态分布的全局亮度扰动。
 将原图与两类噪声图横向排列展示，直观对比噪声的视觉差异。
 
+```
+# 椒盐噪声
+sp_noise_img = random_noise(rgb_img, mode='s&p', amount=0.4)
+
+# 高斯噪声
+gus_noise_img = random_noise(rgb_img, mode='gaussian', mean=0.2, var=0.03)
+
+plt.figure(figsize=(10, 4))
+
+plt.subplot(1, 3, 1)
+plt.imshow(rgb_img)
+plt.title('Original Image')
+
+plt.subplot(1, 3, 2)
+plt.imshow(sp_noise_img)
+plt.title('S&P Noise')
+
+plt.subplot(1, 3, 3)
+plt.imshow(gus_noise_img)
+plt.title('Gaussian Noise')
+
+plt.tight_layout()
+plt.savefig('result/noise_comparison.jpg', dpi=300)
+plt.show()
+```
+![result](result/noise_comparison.jpg)
 ### 3.4 经典滤波算法去噪实验
 
 分别对椒盐噪声、高斯噪声图像应用三种滤波算法：
@@ -68,19 +112,94 @@ plt.show()
 2. 中值滤波：采用 5×5 窗口，以邻域像素排序后的中值作为输出，需先将浮点型噪声图转换为 uint8 格式。
 3. 高斯滤波：采用 5×5 高斯核，按距离加权平均，标准差自动计算。
 将 6 组处理结果排列为 2 行 3 列的对比图，统一保存。
+```
+# 均值滤波
+mean_sp = cv2.blur(sp_noise_img, (5, 5))
+mean_gus = cv2.blur(gus_noise_img, (5, 5))
 
+# 中值滤波（需 uint8）
+mid_sp = cv2.medianBlur((sp_noise_img * 255).astype(np.uint8), 5)
+mid_gus = cv2.medianBlur((gus_noise_img * 255).astype(np.uint8), 5)
+
+# 高斯滤波
+gauss_sp = cv2.GaussianBlur((sp_noise_img * 255).astype(np.uint8), (5, 5), 0)
+gauss_gus = cv2.GaussianBlur((gus_noise_img * 255).astype(np.uint8), (5, 5), 0)
+```
+```
+plt.figure(figsize=(13, 9))
+
+# 椒盐噪声
+plt.subplot(2, 3, 1)
+plt.imshow(mean_sp)
+plt.title('S&P + Mean Filter')
+
+plt.subplot(2, 3, 2)
+plt.imshow(mid_sp)
+plt.title('S&P + Median Filter')
+
+plt.subplot(2, 3, 3)
+plt.imshow(gauss_sp)
+plt.title('S&P + Gaussian Filter')
+
+# 高斯噪声
+plt.subplot(2, 3, 4)
+plt.imshow(mean_gus)
+plt.title('Gaussian + Mean Filter')
+
+plt.subplot(2, 3, 5)
+plt.imshow(mid_gus)
+plt.title('Gaussian + Median Filter')
+
+plt.subplot(2, 3, 6)
+plt.imshow(gauss_gus)
+plt.title('Gaussian + Gaussian Filter')
+
+plt.tight_layout()
+plt.savefig('result/filter_results_2x3.jpg', dpi=300)
+plt.show()
+```
+![result](result/filter_results_2x3.jpg)
 ### 3.5 手动实现中值滤波
 
 自主编写函数实现彩色图像中值滤波：对图像边缘采用复制填充避免信息丢失；对 R、G、B 三个通道独立遍历，逐个像素提取邻域窗口并计算中值；最终将手动滤波结果与带噪原图对比，验证算法有效性。
+```
+def manual_median_filter_color(image, kernel_size=5):
+    """
+    手动实现彩色图像的中值滤波
+    image: 输入彩色图像 (H, W, 3)
+    kernel_size: 滤波窗口大小
+    """
+    pad = kernel_size // 2
+    filtered_img = np.zeros_like(image)
 
+    for c in range(3):
+        channel = image[:, :, c]
+        padded = np.pad(channel, pad_width=pad, mode='edge')
+        for i in range(channel.shape[0]):
+            for j in range(channel.shape[1]):
+                region = padded[i:i+kernel_size, j:j+kernel_size]
+                filtered_img[i, j, c] = np.median(region)
 
+    return filtered_img
+```
+```
+manual_mid = manual_median_filter_color((sp_noise_img * 255).astype(np.uint8), kernel_size=5)
 
+plt.figure(figsize=(8, 4))
 
+plt.subplot(1, 2, 1)
+plt.imshow(sp_noise_img)
+plt.title('S&P Noise Image')
 
+plt.subplot(1, 2, 2)
+plt.imshow(manual_mid)
+plt.title('Manual Median Filter')
 
-
-
-
+plt.tight_layout()
+plt.savefig('result/manual_median.jpg', dpi=300)
+plt.show()
+```
+![result](result/manual_median.jpg)
 
 ## 四、实验结果与分析
 
@@ -97,11 +216,11 @@ plt.show()
 
 ### 4.3 滤波算法效果分析
 
-1. **均值滤波**
+1. 值滤波
 对高斯噪声有较好的平滑效果，邻域平均可以抵消正负方向的随机扰动，让画面整体趋于柔和；但对椒盐噪声处理效果很差，黑白极值点会参与平均运算，导致噪点变为模糊的斑块，无法彻底清除，同时图像边缘与细节会被明显模糊。
-2. **中值滤波**
+2. 中值滤波
 对椒盐噪声的去除效果最为突出，几乎可以完全消除孤立的黑白噪点。原因在于椒盐噪声的极值点在邻域排序中处于两端，不会被选为中值，因此去噪同时能较好保留边缘与纹理细节。对高斯噪声也有一定抑制作用，但平滑自然度不如线性滤波，画面会残留轻微颗粒感。
-3. **高斯滤波**
+3. 高斯滤波
 对高斯噪声的去除效果最优，基于距离的加权平均方式让中心像素权重更高，相比均值滤波更好地保留了边缘信息，去噪后画面过渡自然，模糊程度更低。但面对椒盐噪声这种突变极值时，加权平均依然会受极值点干扰，无法彻底清除噪点。
 
 ### 4.4 手动实现滤波结果分析
@@ -111,4 +230,5 @@ plt.show()
 
 ## 五、实验总结与体会
 
-    本次实验完整覆盖了图像读取、色彩转换、噪声生成、滤波去噪的全流程，通过对照实验清晰验证了 “不同噪声对应最优滤波算法” 的规律：椒盐噪声优先选择非线性的中值滤波，高斯噪声更适合线性的均值滤波或高斯滤波，其中高斯滤波在边缘保留上更具优势。手动编码实现中值滤波的过程，让我对邻域滤波的执行逻辑、多通道处理思想、边界处理技巧都有了更具象的理解。同时也认识到，图像处理没有通用的最优算法，必须结合噪声类型、业务对细节和边缘的要求来选型。本次实验为后续更复杂的图像增强、图像复原算法学习打下了扎实基础，后续可以进一步探究滤波核尺寸、参数调整对去噪效果的影响，以及双边滤波、非局部均值等进阶去噪方案。
+本次实验围绕图像增强与滤波去噪主题展开，完整完成了图像读取与像素信息提取、色彩空间格式转换、典型图像噪声模拟、多种经典滤波算法对比测试，以及彩色图像中值滤波的手动编码实现等全部实验环节。
+通过实验，我熟练掌握了 OpenCV 库读取本地图像、提取指定坐标像素值的基本方法，理清了 RGB 与 BGR 两种通道存储格式的区别，理解了不同色彩空间的应用场景，也掌握了彩色图像向灰度图像转换的方法与实际意义。在噪声模拟环节，我学会了使用 scikit-image 库为图像添加椒盐噪声与高斯噪声，直观认识了两类噪声的生成机制与视觉表现差异，明确了椒盐噪声属于脉冲型极值噪声、高斯噪声属于加性连续噪声的本质区别。在滤波去噪的对照实验中，我系统掌握了均值滤波、中值滤波、高斯滤波三种经典算法的调用方式与核心原理，通过对比效果总结出了算法适配规律。中值滤波作为非线性滤波，对椒盐噪声这类孤立极值点有出色的去除能力，同时能较好保留图像边缘细节。均值滤波与高斯滤波作为线性滤波，对高斯噪声的平滑抑制效果更佳，其中高斯滤波凭借距离加权的特性，在去噪同时能更好地保留画面边缘信息。手动编写彩色图像中值滤波函数的过程，让我深入理解了邻域滤波的底层执行逻辑，切实掌握了图像边界填充、多通道独立遍历处理、邻域窗口像素排序取中值等核心实现方法，也验证了彩色图像处理中逐通道运算的必要性。
