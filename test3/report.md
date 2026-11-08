@@ -6,7 +6,8 @@
 1. 理解基于局部特征的图像配准与拼接流程，认识关键点、特征描述子与匹配点对的作用。
 2. 掌握 SIFT特征检测与描述方法，并使用 FLANN 进行近邻匹配。
 3. 掌握 Lowe 比率测试筛选候选匹配点的方法，以及 RANSAC 估计单应性矩阵的基本原理。
-4. 熟悉 OpenCV 中透视变换与图像拼接的实现，分析拼接效果及直接覆盖融合的局限性。
+4. 理解 RANSAC 算法的基本思想，利用匹配点之间的几何一致性估计单应性矩阵，并对比几何筛选前后的匹配效果。
+5. 熟悉 OpenCV 中透视变换与图像拼接的实现，分析拼接效果。
 
 ## 二、实验环境与素材
 #### 开发平台：Python 3.12 + Jupyter Notebook
@@ -18,7 +19,6 @@
 ## 三、实验内容与步骤
 
 ### 3.1 图像读取和预处理
-
 首先使用 `cv2.imread()` 读取左右两幅输入图像，并通过 `cv2.cvtColor(..., cv2.COLOR_BGR2RGB)` 将 OpenCV 默认的 BGR 通道顺序转换为 RGB，以便后续通过 Matplotlib 显示彩色图像。随后生成灰度图并保存原图、灰度图的可视化结果。
 
 ```
@@ -33,17 +33,37 @@ gray_b = cv2.cvtColor(img_b, cv2.COLOR_BGR2GRAY)
 |:---:|:---:|
 | ![左侧灰度图可视化](https://raw.githubusercontent.com/nori-xc/CV_test/main/test3/result/gray_left.jpg) | ![右侧灰度图可视化](https://raw.githubusercontent.com/nori-xc/CV_test/main/test3/result/gray_right.jpg) |
 
-### 3.2 SIFT 特征提取与 FLANN 匹配
-
-运行 SIFT 算法获取关键点及描述子，使用 FLANN 寻找两个最近邻匹配，再通过阈值为 0.7 的比率测试，得到候选匹配点对。
+### 3.2 SIFT 特征提取与关键点可视化
+创建 SIFT 检测器，对左右两幅图像分别提取关键点及描述子。
 
 ```
 sift = cv2.SIFT_create()
 kp_a, des_a = sift.detectAndCompute(img_a, None)
 kp_b, des_b = sift.detectAndCompute(img_b, None)
 
-index_params = dict(algorithm=1, trees=5)  # FLANN_INDEX_KDTREE = 1
+vis_a = cv2.drawKeypoints(
+    img_a, kp_a, None,
+    flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+)
+vis_b = cv2.drawKeypoints(
+    img_b, kp_b, None,
+    flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+)
+```
+
+![图2 SIFT 特征点分布可视化](result/SIFT%20Keypoints.jpg)
+
+*图2　左右图像 SIFT 关键点分布。*
+从图2可见，两幅图像的建筑线条、人物五官、文字边缘以及草地纹理区域均检测到了关键点,部分较平坦的区域关键点相对稀疏。关键点分布反映了 SIFT 更容易在局部梯度变化明显的位置提取具有区分度的特征。
+
+### 3.3 FLANN 特征匹配
+使用 FLANN 寻找描述子的两个近邻，并按基准阈值 $r=0.7$ 进行 Lowe 比率筛选.
+
+```
+FLANN_INDEX_KDTREE = 1
+index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 search_params = dict(checks=50)
+
 flann = cv2.FlannBasedMatcher(index_params, search_params)
 matches = flann.knnMatch(des_a, des_b, k=2)
 
@@ -53,29 +73,52 @@ for m, n in matches:
         good_matches.append(m)
 ```
 
-通过 `cv2.drawMatches()` 将保留下来的对应点以连线方式显示。图2中的密集连线主要覆盖建筑边缘、人物面部与绿化区域等具有纹理和结构的部分，匹配点对为下一阶段的几何估计提供输入。
+通过 `cv2.drawMatches()` 绘制候选匹配点之间的连线，检查两幅图像在共有区域中的特征对应情况。
 
-![图2 SIFT 与 FLANN 特征匹配可视化](https://raw.githubusercontent.com/nori-xc/CV_test/main/test3/result/Matched%20Keypoints.jpg)
+![图3 SIFT 与 FLANN 特征匹配图](result/Matched%20Keypoints.jpg)
 
-### 3.3 RANSAC 估计单应性矩阵
+*图3　经 Lowe 比率测试保留的候选匹配点对。*
 
-使用 `queryIdx`、`trainIdx` 分别获取匹配点在左右两幅图像中的坐标，将右图点作为源点、左图点作为目标点，并用 RANSAC 估计透视变换矩阵。
+### 3.4 Lowe 比率阈值对比实验
+
+为分析比率阈值对匹配结果的影响，补充测试 $r=0.6、0.7、0.8、0.9$ 四组参数。每组实验均基于相同的 SIFT 描述子和 FLANN 最近邻搜索结果重新筛选候选匹配，再使用相同的 RANSAC 基准阈值估计单应性矩阵，统计候选匹配数量及几何内点数量。
+
+实验生成候选匹配数与 RANSAC 内点数随 Lowe 比率变化的曲线：
+
+![图4 Lowe 比率阈值对比曲线](result/Lowe%20Ratio%20Comparison.jpg)
+
+*图4　不同 Lowe 比率阈值下的候选匹配数量与 RANSAC 内点数量。*
+从图4可以看出，比率阈值从 0.6 增大到 0.9 时，候选匹配数量持续增加；而 RANSAC 内点数量的增幅相对有限，特别是在较高阈值区间，两者增长速度的差异更加明显。
+这说明放宽 Lowe 比率条件可以获得更多匹配，但其中可能包含更多不满足同一单应性关系的匹配。因而阈值选择需要在候选匹配数量和几何一致性之间取得平衡，不能仅依据候选匹配的绝对数量作出判断。
+### 3.5 RANSAC 单应性估计与筛选前后对比
+
+根据 `good_matches` 中的索引提取对应点坐标，将右图特征点作为源点、左图特征点作为目标点，并通过 RANSAC 估计单应性矩阵：
 
 ```
-src_pts = np.float32(
-    [kp_b[m.trainIdx].pt for m in good_matches]
-).reshape(-1, 1, 2)
+src_pts = np.float32([
+    kp_b[m.trainIdx].pt for m in good_matches
+]).reshape(-1, 1, 2)
 
-dst_pts = np.float32(
-    [kp_a[m.queryIdx].pt for m in good_matches]
-).reshape(-1, 1, 2)
+dst_pts = np.float32([
+    kp_a[m.queryIdx].pt for m in good_matches
+]).reshape(-1, 1, 2)
 
-H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+H, mask = cv2.findHomography(
+    src_pts, dst_pts, cv2.RANSAC, 5.0
+)
 ```
 
-### 3.4 计算画布范围并完成拼接
+利用 `mask` 对比 RANSAC 筛选前后的匹配点连线：
 
-将右图四角经 `H` 变换后与左图四角合并，计算新的边界范围。使用 `T @ H` 进行透视变换，并在画布对应位置覆盖左图，最后使用 `plt.savefig()` 保存拼接结果。
+![图5 RANSAC 优化前后匹配点对比](result/RANSAC%20Comparison.jpg)
+
+*图5　上图为 Lowe 比率筛选后的候选匹配，下图为进一步保留的 RANSAC 几何内点。*
+
+从图5可见，经过 RANSAC 筛选后，匹配连线数量有所减少，保留下来的匹配点在空间投影关系上具有更好的一致性。这说明仅靠描述子距离进行筛选仍不充分，有必要进一步利用图像之间的几何约束剔除不符合单应性模型的候选点。
+
+### 4.6 计算拼接画布与透视变换
+
+将右图四角经单应性矩阵变换后的坐标与左图四角合并，计算输出画布边界。构造平移矩阵后，将右图透视变换到公共坐标系，再把左图覆盖到其对应位置：
 
 ```
 translation_matrix = np.array([
@@ -89,10 +132,13 @@ fus_img = cv2.warpPerspective(
     translation_matrix @ H,
     (x_max - x_min, y_max - y_min)
 )
+
 fus_img[-y_min:h_a-y_min, -x_min:w_a-x_min] = img_a
 ```
 
-![图3 图像拼接最终结果](https://raw.githubusercontent.com/nori-xc/CV_test/main/test3/result/Image%20Stitching%20Result.jpg)
+![图6 最终图像拼接结果](result/Image%20Stitching%20Result.jpg)
+
+*图6　基于 SIFT、FLANN、RANSAC 与透视变换获得的最终图像。*
 
 ## 四、实验结果与分析
 
