@@ -53,7 +53,8 @@ vis_b = cv2.drawKeypoints(
 
 ![图2 SIFT 特征点分布可视化](result/SIFT%20Keypoints.jpg)
 
-*图2　左右图像 SIFT 关键点分布。*
+* 图2　左右图像 SIFT 关键点分布。*
+
 从图2可见，两幅图像的建筑线条、人物五官、文字边缘以及草地纹理区域均检测到了关键点,部分较平坦的区域关键点相对稀疏。关键点分布反映了 SIFT 更容易在局部梯度变化明显的位置提取具有区分度的特征。
 
 ### 3.3 FLANN 特征匹配
@@ -77,7 +78,7 @@ for m, n in matches:
 
 ![图3 SIFT 与 FLANN 特征匹配图](result/Matched%20Keypoints.jpg)
 
-*图3　经 Lowe 比率测试保留的候选匹配点对。*
+* 图3　经 Lowe 比率测试保留的候选匹配点对。*
 
 ### 3.4 Lowe 比率阈值对比实验
 
